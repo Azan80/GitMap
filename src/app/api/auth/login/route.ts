@@ -19,43 +19,6 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase();
 
-    // Handle demo user for Vercel deployment
-    const isVercel = process.env.VERCEL === '1';
-    const isDemoUser = email === 'demo@gitmap.com' && password === 'demo123';
-    
-    if (isVercel && isDemoUser) {
-      // Create demo user session
-      const demoUser = {
-        id: 1,
-        username: 'demo',
-        email: 'demo@gitmap.com',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      // Generate JWT token for demo user
-      const token = jwt.sign(
-        { userId: demoUser.id, username: demoUser.username, email: demoUser.email },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      // Store session
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-
-      await db.run(
-        'INSERT OR REPLACE INTO user_sessions (user_id, token, expires_at) VALUES (?, ?, ?)',
-        [demoUser.id, token, expiresAt.toISOString()]
-      );
-
-      return NextResponse.json({
-        success: true,
-        user: demoUser,
-        token
-      });
-    }
-
     // Find user by email
     const user = await db.get(
       'SELECT id, username, email, password_hash, created_at, updated_at FROM users WHERE email = ?',

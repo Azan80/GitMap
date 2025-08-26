@@ -28,23 +28,6 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase();
 
-    // Handle demo user for Vercel deployment
-    const isVercel = process.env.VERCEL === '1';
-    if (isVercel && decoded.email === 'demo@gitmap.com') {
-      const demoUser = {
-        id: 1,
-        username: 'demo',
-        email: 'demo@gitmap.com',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      return NextResponse.json({
-        success: true,
-        user: demoUser
-      });
-    }
-
     // Check if session exists and is not expired
     const session = await db.get(
       'SELECT * FROM user_sessions WHERE token = ? AND expires_at > datetime("now")',

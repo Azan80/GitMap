@@ -10,22 +10,28 @@ export async function getDatabase(): Promise<Database> {
     return db;
   }
 
-  // Use in-memory database for serverless environments
+  // For Vercel deployment, use a simple in-memory database with fallback
   const isVercel = process.env.VERCEL === '1';
-  const dbPath = isVercel ? ':memory:' : path.join(process.cwd(), 'data', 'gitmap.db');
   
-  if (!isVercel) {
-    // Only create data directory in non-serverless environments
+  if (isVercel) {
+    // Use in-memory database for Vercel
+    db = await open({
+      filename: ':memory:',
+      driver: sqlite3.Database
+    });
+  } else {
+    // Use local file database for development
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
+    
+    const dbPath = path.join(dataDir, 'gitmap.db');
+    db = await open({
+      filename: dbPath,
+      driver: sqlite3.Database
+    });
   }
-  
-  db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
 
                 // Create tables if they don't exist
               await db.exec(`
@@ -104,22 +110,20 @@ export async function getDatabase(): Promise<Database> {
                 console.log('Error updating existing repositories:', error);
               }
 
-              // Add sample data for Vercel deployment (in-memory database)
-              if (isVercel) {
-                try {
-                  // Check if sample user exists
-                  const existingUser = await db.get('SELECT * FROM users WHERE email = ?', ['demo@gitmap.com']);
-                  if (!existingUser) {
-                    // Create sample user
-                    await db.run(
-                      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
-                      ['demo', 'demo@gitmap.com', '$2b$10$demo.hash.for.testing.purposes.only']
-                    );
-                    console.log('Created sample user for Vercel deployment');
-                  }
-                } catch (error) {
-                  console.log('Error creating sample data:', error);
+              // Add sample data for new installations
+              try {
+                // Check if sample user exists
+                const existingUser = await db.get('SELECT * FROM users WHERE email = ?', ['admin@gitmap.com']);
+                if (!existingUser) {
+                  // Create admin user
+                  await db.run(
+                    'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                    ['admin', 'admin@gitmap.com', '$2b$10$demo.hash.for.testing.purposes.only']
+                  );
+                  console.log('Created admin user for new installation');
                 }
+              } catch (error) {
+                console.log('Error creating sample data:', error);
               }
 
   return db;

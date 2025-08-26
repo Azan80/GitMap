@@ -56,13 +56,28 @@ yarn dev
 
 ### Production Deployment (Vercel)
 
-The app is configured to work on Vercel with a demo account:
+The app is configured to work on Vercel with a simple database solution:
 
-**Demo Credentials:**
-- **Email**: `demo@gitmap.com`
-- **Password**: `demo123`
+1. **Set Environment Variables**:
+   ```env
+   JWT_SECRET=your-secure-jwt-secret
+   ```
+2. **Deploy**: `vercel --prod`
 
-**Note**: The production version uses an in-memory database, so data will be reset on each deployment. For persistent data, consider using a cloud database like PostgreSQL or MongoDB.
+**Admin Account** (created automatically):
+- **Email**: `admin@gitmap.com`
+- **Password**: `admin123`
+
+**Features**:
+- ✅ **Works on Vercel** - No file system issues
+- ✅ **SQLite compatibility** - Same SQL you know
+- ✅ **Simple setup** - No external database required
+- ✅ **Serverless ready** - Perfect for Vercel
+
+**Note**: For production use with persistent data, consider:
+- **Turso** (cloud SQLite): `npm install @libsql/client`
+- **PlanetScale** (MySQL): `npm install @planetscale/database`
+- **Supabase** (PostgreSQL): `npm install @supabase/supabase-js`
 
 ## Usage
 
