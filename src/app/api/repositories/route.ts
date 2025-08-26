@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    const user = await verifyToken(token);
+    const user = await verifyToken(token); 
     if (!user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
