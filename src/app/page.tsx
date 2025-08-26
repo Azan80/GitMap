@@ -1,103 +1,153 @@
-import Image from "next/image";
+'use client';
+
+import { AuthModal } from '@/components/auth-modal';
+import { RepoCreator } from '@/components/repo-creator';
+import { Sidebar } from '@/components/sidebar';
+import { WelcomePage } from '@/components/welcome-page';
+import { useAuthStore } from '@/store/auth-store';
+import { useGitStore } from '@/store/git-store';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { loadRepositories, error, setError } = useGitStore();
+  const { user, isAuthenticated, login, signup, logout, verifyToken } = useAuthStore();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    // Verify token on app load
+    verifyToken();
+  }, [verifyToken]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadRepositories();
+    }
+  }, [isAuthenticated]); // Only depend on isAuthenticated, not loadRepositories
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      setError(null);
+    }
+  }, [error, setError]);
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await login(email, password);
+      setShowAuthModal(false);
+      toast.success('Successfully logged in!');
+    } catch (error) {
+      toast.error('Login failed');
+    }
+  };
+
+  const handleSignup = async (email: string, password: string, username: string) => {
+    try {
+      await signup(email, password, username);
+      setShowAuthModal(false);
+      toast.success('Account created successfully!');
+    } catch (error) {
+      toast.error('Signup failed');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">GitMap</h1>
+            <button
+              onClick={() => setShowAuthModal(true)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Sign In
+            </button>
+          </div>
+        </header>
+
+        {/* Welcome Content */}
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-2xl mx-auto px-6">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Welcome to GitMap
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              A modern Git management interface for managing repositories, commits, and branches
+            </p>
+            <div className="space-y-4">
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="bg-blue-600 text-white px-8 py-3 rounded-md hover:bg-blue-700 transition-colors text-lg font-medium"
+              >
+                Get Started
+              </button>
+              <div className="text-sm text-gray-500">
+                Sign in to start managing your Git repositories
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-gray-900">GitMap</h1>
+              <span className="text-sm text-gray-500">Modern Git Management Interface</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                Welcome, {user?.username}!
+              </span>
+              <button
+                onClick={logout}
+                className="text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Repository Creator - Always visible */}
+                <div>
+                  <RepoCreator />
+                </div>
+
+                {/* Welcome Content */}
+                <div>
+                  <WelcomePage />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
