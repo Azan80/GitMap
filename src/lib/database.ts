@@ -10,13 +10,17 @@ export async function getDatabase(): Promise<Database> {
     return db;
   }
 
-  // Ensure data directory exists
-  const dataDir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+  // Use in-memory database for serverless environments
+  const isVercel = process.env.VERCEL === '1';
+  const dbPath = isVercel ? ':memory:' : path.join(process.cwd(), 'data', 'gitmap.db');
+  
+  if (!isVercel) {
+    // Only create data directory in non-serverless environments
+    const dataDir = path.join(process.cwd(), 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
   }
-
-  const dbPath = path.join(dataDir, 'gitmap.db');
   
   db = await open({
     filename: dbPath,
@@ -98,6 +102,24 @@ export async function getDatabase(): Promise<Database> {
                 }
               } catch (error) {
                 console.log('Error updating existing repositories:', error);
+              }
+
+              // Add sample data for Vercel deployment (in-memory database)
+              if (isVercel) {
+                try {
+                  // Check if sample user exists
+                  const existingUser = await db.get('SELECT * FROM users WHERE email = ?', ['demo@gitmap.com']);
+                  if (!existingUser) {
+                    // Create sample user
+                    await db.run(
+                      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+                      ['demo', 'demo@gitmap.com', '$2b$10$demo.hash.for.testing.purposes.only']
+                    );
+                    console.log('Created sample user for Vercel deployment');
+                  }
+                } catch (error) {
+                  console.log('Error creating sample data:', error);
+                }
               }
 
   return db;

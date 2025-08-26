@@ -54,6 +54,16 @@ yarn dev
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Production Deployment (Vercel)
+
+The app is configured to work on Vercel with a demo account:
+
+**Demo Credentials:**
+- **Email**: `demo@gitmap.com`
+- **Password**: `demo123`
+
+**Note**: The production version uses an in-memory database, so data will be reset on each deployment. For persistent data, consider using a cloud database like PostgreSQL or MongoDB.
+
 ## Usage
 
 ### Repository Management
