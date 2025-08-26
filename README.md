@@ -52,32 +52,31 @@ npm run dev
 yarn dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser (or visit [https://git-map-liart.vercel.app/](https://git-map-liart.vercel.app/) for production).
 
 ### Production Deployment (Vercel)
 
-The app is configured to work on Vercel with a simple database solution:
+The app uses **PlanetScale** (cloud MySQL) for production database storage:
 
-1. **Set Environment Variables**:
+1. **Setup PlanetScale Database**: Follow the guide in `scripts/setup-planetscale.md`
+2. **Set Environment Variables**:
    ```env
+   DATABASE_HOST=aws.connect.psdb.cloud
+   DATABASE_USERNAME=your-username
+   DATABASE_PASSWORD=your-password
    JWT_SECRET=your-secure-jwt-secret
    ```
-2. **Deploy**: `vercel --prod`
+3. **Deploy**: `vercel --prod`
 
 **Admin Account** (created automatically):
 - **Email**: `admin@gitmap.com`
 - **Password**: `admin123`
 
 **Features**:
-- ✅ **Works on Vercel** - No file system issues
-- ✅ **SQLite compatibility** - Same SQL you know
-- ✅ **Simple setup** - No external database required
+- ✅ **Persistent data** - No data loss on deployments
+- ✅ **MySQL compatibility** - Standard SQL syntax
+- ✅ **Free tier** - 1GB storage, 1B reads/month
 - ✅ **Serverless ready** - Perfect for Vercel
-
-**Note**: For production use with persistent data, consider:
-- **Turso** (cloud SQLite): `npm install @libsql/client`
-- **PlanetScale** (MySQL): `npm install @planetscale/database`
-- **Supabase** (PostgreSQL): `npm install @supabase/supabase-js`
 
 ## Usage
 

@@ -1,36 +1,44 @@
 import fs from 'fs';
 import path from 'path';
-import { Database, open } from 'sqlite';
+import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
+import { DatabaseAdapter, LocalSQLiteAdapter, PlanetScaleAdapter } from './cloud-database';
 
-let db: Database | null = null;
+let db: DatabaseAdapter | null = null;
 
-export async function getDatabase(): Promise<Database> {
+export async function getDatabase(): Promise<DatabaseAdapter> {
   if (db) {
     return db;
   }
 
-  // For Vercel deployment, use a simple in-memory database with fallback
-  const isVercel = process.env.VERCEL === '1';
+  // Use PlanetScale cloud database for production, local SQLite for development
+  const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   
-  if (isVercel) {
-    // Use in-memory database for Vercel
-    db = await open({
-      filename: ':memory:',
-      driver: sqlite3.Database
-    });
+  if (isProduction) {
+    // Use PlanetScale cloud database
+    const host = process.env.DATABASE_HOST;
+    const username = process.env.DATABASE_USERNAME;
+    const password = process.env.DATABASE_PASSWORD;
+    
+    if (!host || !username || !password) {
+      throw new Error('PlanetScale database credentials not configured. Please set DATABASE_HOST, DATABASE_USERNAME, and DATABASE_PASSWORD environment variables.');
+    }
+    
+    db = new PlanetScaleAdapter();
   } else {
-    // Use local file database for development
+    // Use local SQLite for development
     const dataDir = path.join(process.cwd(), 'data');
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     
     const dbPath = path.join(dataDir, 'gitmap.db');
-    db = await open({
+    const sqliteDb = await open({
       filename: dbPath,
       driver: sqlite3.Database
     });
+    
+    db = new LocalSQLiteAdapter(sqliteDb);
   }
 
                 // Create tables if they don't exist
@@ -131,7 +139,7 @@ export async function getDatabase(): Promise<Database> {
 
 export async function closeDatabase() {
   if (db) {
-    await db.close();
+    // For cloud databases, no need to close. For local SQLite, we could add a close method if needed.
     db = null;
   }
 }

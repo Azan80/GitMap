@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate Git URL
-    const gitUrl = `git://localhost:3001/${user.username}/${name}.git`;
+            const gitUrl = `git://git-map-liart.vercel.app/${user.username}/${name}.git`;
 
     // Create repository in database
     const result = await db.run(

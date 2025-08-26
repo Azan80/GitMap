@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase();
 
     // Get repository
-    const repository = await db.get<Repository>(
+    const repository = await db.get(
       'SELECT * FROM repositories WHERE id = ? AND user_id = ?',
       [repositoryId, user.id]
     );
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       await git.addConfig('user.email', user.email || 'user@gitmap.local');
 
       // Get all files from database
-      const files = await db.all<RepositoryFile[]>(
+      const files = await db.all<RepositoryFile>(
         'SELECT * FROM repository_files WHERE repository_id = ?',
         [repositoryId]
       );
