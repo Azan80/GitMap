@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
-import { DatabaseAdapter, LocalSQLiteAdapter, PlanetScaleAdapter } from './cloud-database';
+import { DatabaseAdapter, LocalSQLiteAdapter } from './cloud-database';
+import { jsonDatabase } from './json-database';
+import { SupabaseAdapter } from './supabase-database';
 
 let db: DatabaseAdapter | null = null;
 
@@ -11,20 +13,22 @@ export async function getDatabase(): Promise<DatabaseAdapter> {
     return db;
   }
 
-  // Use PlanetScale cloud database for production, local SQLite for development
+  // Use Supabase for production (Vercel), local SQLite for development
   const isProduction = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   
   if (isProduction) {
-    // Use PlanetScale cloud database
-    const host = process.env.DATABASE_HOST;
-    const username = process.env.DATABASE_USERNAME;
-    const password = process.env.DATABASE_PASSWORD;
+    // Try to use Supabase if credentials are available
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
-    if (!host || !username || !password) {
-      throw new Error('PlanetScale database credentials not configured. Please set DATABASE_HOST, DATABASE_USERNAME, and DATABASE_PASSWORD environment variables.');
+    if (supabaseUrl && supabaseKey) {
+      console.log('Using Supabase database for production deployment');
+      db = new SupabaseAdapter();
+    } else {
+      // Fallback to JSON database if no Supabase credentials
+      console.log('Supabase credentials not found, using JSON database');
+      db = jsonDatabase;
     }
-    
-    db = new PlanetScaleAdapter();
   } else {
     // Use local SQLite for development
     const dataDir = path.join(process.cwd(), 'data');
@@ -139,7 +143,7 @@ export async function getDatabase(): Promise<DatabaseAdapter> {
 
 export async function closeDatabase() {
   if (db) {
-    // For cloud databases, no need to close. For local SQLite, we could add a close method if needed.
+    await db.close();
     db = null;
   }
 }
